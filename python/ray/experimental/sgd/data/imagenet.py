@@ -14,6 +14,7 @@ fs = s3fs.S3FileSystem()
 train_dir = "anyscale-data/imagenet/train"
 valid_dir = "anyscale-data/imagenet/validation"
 
+
 def get_files(fs, dir, max_files=None):
     files = []
 
@@ -28,19 +29,23 @@ def get_files(fs, dir, max_files=None):
 
     return files
 
+
 def get_labels(fs, dir):
     paths = fs.ls(dir)
     labels = [path.split('/')[-1] for path in paths]
     label_list = list(set(labels))
-    return dict([( val, index ) for index, val in enumerate(label_list)])
+    return dict([(val, index) for index, val in enumerate(label_list)])
+
 
 labels = get_labels(fs, train_dir)
+
 
 def iter_len(iterator):
     count = 0
     for _ in iterator.gather_sync():
         count += 1
     return count
+
 
 def to_datum(fs, s3_path, mode="rgb"):
     file_name = s3_path.split('/')[-1]
@@ -50,21 +55,25 @@ def to_datum(fs, s3_path, mode="rgb"):
     image = Image.open(f)
     return image, label
 
+
 def optimizer_creator(model, config):
     """Returns optimizer"""
     return torch.optim.SGD(model.parameters(), lr=config.get("lr", 0.1))
+
 
 def scheduler_creator(optimizer, config):
     return torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=[150, 250, 350], gamma=0.1)
 
-process_img = lambda datum : (datum[0].resize((256, 256)), datum[1])
+
+process_img = lambda datum: (datum[0].resize((256, 256)), datum[1])
 
 num_shards = 3
 files = get_files(fs, train_dir, max_files=num_shards)
 train_iter = ray.experimental.iter.from_items(files, num_shards=num_shards) \
     .for_each(lambda x: to_datum(fs, x)) \
     .for_each(lambda datum: ((transforms.ToTensor()(datum[0].resize((224, 224)))), labels[datum[1]]))
+
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, local_iter):
@@ -76,9 +85,11 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self._data)
 
+
 def dataset_creator(config):
     print(config)
     return Dataset(train_iter.get_shard(config.get("worker_index", 0)))
+
 
 def train_example(num_replicas=1,
                   num_epochs=5,
@@ -109,15 +120,12 @@ def train_example(num_replicas=1,
     trainer1.shutdown()
     print("success!")
 
+
 train_example()
 # train_iter.show()
 # print(get_files(fs, train_dir, max_files=100))
 # print(get_files(fs, valid_dir, max_files=100))
 
-
-
-
 print(iter_len(train_iter))
 
 train_iter.show(1)
-

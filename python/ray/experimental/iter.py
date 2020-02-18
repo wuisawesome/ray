@@ -505,6 +505,15 @@ class LocalIterator(Generic[T]):
         self._build_once()
         return next(self.built_iterator)
 
+    def __len__(self):
+        it = iter(self.base_iterator(self.timeout))
+        for fn in self.local_transforms:
+            it = fn(it)
+        count = 0
+        for _ in it:
+            count += 1
+        return count
+
     def __str__(self):
         return repr(self)
 

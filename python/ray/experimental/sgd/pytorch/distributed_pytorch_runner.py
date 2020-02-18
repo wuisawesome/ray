@@ -23,9 +23,10 @@ class DistributedPyTorchRunner(PyTorchRunner):
 
     """
 
-    def __init__(self, *args, backend="gloo", **kwargs):
+    def __init__(self, *args, backend="gloo", worker_index=None, **kwargs):
         super(DistributedPyTorchRunner, self).__init__(*args, **kwargs)
         self.backend = backend
+        self.config["worker_index"] = worker_index
 
     def setup(self, url, world_rank, world_size):
         """Connects to the distributed PyTorch backend and initializes the model.
@@ -83,9 +84,9 @@ class DistributedPyTorchRunner(PyTorchRunner):
             train_set, val_set = self._validate_datasets(datasets)
 
         train_loader_config = self.dataloader_config.copy()
-        train_loader_config.update(
-            sampler=torch.utils.data.distributed.DistributedSampler(train_set),
-            shuffle=False)
+        # train_loader_config.update(
+        #     sampler=torch.utils.data.distributed.DistributedSampler(train_set),
+        #     shuffle=False)
 
         self.train_loader = torch.utils.data.DataLoader(
             train_set, batch_size=self.batch_size, **train_loader_config)
@@ -101,8 +102,8 @@ class DistributedPyTorchRunner(PyTorchRunner):
         Automatically sets epoch of sampler if possible.
         """
         logger.debug("Starting step")
-        if hasattr(self.train_loader.sampler, "set_epoch"):
-            self.train_loader.sampler.set_epoch(self.epoch)
+        # if hasattr(self.train_loader.sampler, "set_epoch"):
+        #     self.train_loader.sampler.set_epoch(self.epoch)
         return super(DistributedPyTorchRunner, self).step()
 
     def _get_model_state_dicts(self):

@@ -55,6 +55,7 @@ class PyTorchRunner:
                  use_fp16=False,
                  apex_args=None,
                  scheduler_step_freq="batch"):
+
         self.model_creator = model_creator
         self.data_creator = data_creator
         self.optimizer_creator = optimizer_creator
@@ -177,6 +178,8 @@ class PyTorchRunner:
             pytorch_utils.SCHEDULER_STEP: self.scheduler_step_freq
         })
         with self._timers["training"]:
+            # import ipdb
+            # ipdb.set_trace(context=6)
             train_stats = self.train_function(
                 training_config,
                 self.given_models,

@@ -250,7 +250,8 @@ class PyTorchTrainer:
                     batch_size=batch_size_per_replica,
                     use_fp16=self.use_fp16,
                     apex_args=self.apex_args,
-                    scheduler_step_freq=self.scheduler_step_freq)
+                    scheduler_step_freq=self.scheduler_step_freq,
+                    worker_index=i)
                 for i in range(num_replicas)
             ]
             if self.initialization_hook:

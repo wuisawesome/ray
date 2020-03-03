@@ -50,8 +50,6 @@ def key_pair(i, region):
 logging.getLogger("botocore").setLevel(logging.WARNING)
 
 
-
-
 def bootstrap_aws(config):
     # The head node needs to have an IAM role that allows it to create further
     # EC2 instances.
@@ -74,7 +72,8 @@ def bootstrap_aws(config):
 
 
 def _configure_iam_role(config):
-    if "IamInstanceProfile" in config["head_node"] and "IamInstanceProfile" in config["worker_nodes"]:
+    if "IamInstanceProfile" in config["head_node"] \
+       and "IamInstanceProfile" in config["worker_nodes"]:
         return config
 
     profile = _get_instance_profile(DEFAULT_RAY_INSTANCE_PROFILE, config)
@@ -124,7 +123,6 @@ def _configure_iam_role(config):
                     profile.arn))
     config["head_node"]["IamInstanceProfile"] = {"Arn": profile.arn}
     config["worker_nodes"]["IamInstanceProfile"] = {"Arn": profile.arn}
-
 
     return config
 

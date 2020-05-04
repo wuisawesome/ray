@@ -15,15 +15,15 @@
 #ifndef RAY_COMMON_SCHEDULING_SCHEDULING_H
 #define RAY_COMMON_SCHEDULING_SCHEDULING_H
 
+#include <iostream>
+#include <sstream>
+#include <vector>
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "ray/common/scheduling/scheduling_ids.h"
 #include "ray/common/task/scheduling_resources.h"
 #include "ray/util/logging.h"
-
-#include <iostream>
-#include <sstream>
-#include <vector>
 
 /// List of predefined resources.
 enum PredefinedResources { CPU, MEM, GPU, TPU, PredefinedResources_MAX };

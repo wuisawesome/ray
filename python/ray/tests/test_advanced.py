@@ -529,6 +529,26 @@ def test_wait_makes_object_local(ray_start_cluster):
     assert len(ok) == 1
     assert ray.worker.global_worker.core_worker.object_exists(x_id)
 
+def test_execute_local(ray_start_cluster):
+    cluster = ray_start_cluster
+    cluster.add_node(num_cpus=1)
+    cluster.add_node(num_cpus=1)
+    cluster.add_node(num_cpus=1)
+    cluster.add_node(num_cpus=1)
+    from time import sleep
+    sleep(1)
+    ray.init(address=cluster.address)
+    sleep(1)
+    def get_cur_node():
+        available_resources = ray.available_resources()
+        return next(filter(lambda x : "node:" in x, available_resources.keys()))
+    @ray.remote
+    def same_nodes(calling_node):
+        return get_cur_node() == calling_node
+    local_node = get_cur_node()
+    for i in range(10):
+        assert ray.get(same_nodes.remote(local_node))
+
 
 if __name__ == "__main__":
     import pytest

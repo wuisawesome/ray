@@ -471,8 +471,8 @@ def _configure_security_group(config):
             head_sg.group_name, head_sg.id)
         config["head_node"]["SecurityGroupIds"] = [head_sg.id]
 
-    if NODE_TYPE_WORKER in node_types_to_configure:
-        workers_sg = security_groups[NODE_TYPE_WORKER]
+    if NODE_KIND_WORKER in node_types_to_configure:
+        workers_sg = security_groups[NODE_KIND_WORKER]
 
         _set_config_info(workers_security_group_src="default")
         cli_logger.old_info(

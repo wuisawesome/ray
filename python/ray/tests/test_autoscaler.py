@@ -25,6 +25,7 @@ from ray.autoscaler.tags import TAG_RAY_NODE_KIND, TAG_RAY_NODE_STATUS, \
 from ray.autoscaler.node_provider import NodeProvider
 from ray.test_utils import RayTestTimeoutException
 import pytest
+from typing import Any, Optional, Dict
 
 
 class MockNode:
@@ -128,21 +129,42 @@ class MockProcessRunner:
 
 
 class MockProvider(NodeProvider):
-    def __init__(self, cache_stopped=False, unique_ips=False, terminate_nodes_fn=None):
-        self.mock_nodes = {}
-        self.next_id = 0
-        self.throw = False
-        self.fail_creates = False
-        self.ready_to_create = threading.Event()
-        self.ready_to_create.set()
-        self.cache_stopped = cache_stopped
-        self.unique_ips = unique_ips
-        self.terminate_nodes_fn = terminate_nodes_fn
-        # Many of these functions are called by node_launcher or updater in
-        # different threads. This can be treated as a global lock for
-        # everything.
-        self.lock = threading.Lock()
-        super().__init__(None, None)
+
+    singleton = None
+
+    def __init__(self, provier_config=None, cluster_name=None, cache_stopped=False, unique_ips=False, terminate_nodes_fn=None):
+        if singleton is None:
+            MockProvider.singleton = self
+            self.mock_nodes = {}
+            self.next_id = 0
+            self.throw = False
+            self.fail_creates = False
+            self.ready_to_create = threading.Event()
+            self.ready_to_create.set()
+            self.cache_stopped = cache_stopped
+            self.unique_ips = unique_ips
+            self.terminate_nodes_fn = terminate_nodes_fn
+            # Many of these functions are called by node_launcher or updater in
+            # different threads. This can be treated as a global lock for
+            # everything.
+            self.lock = threading.Lock()
+            super().__init__(None, None)
+        else:
+            self.mock_nodes = MockProvider.singleton.mock_nodes
+            self.next_id = MockProvider.singleton.next_id
+            self.throw = MockProvider.singleton.throw
+            self.fail_creates = MockProvider.singleton.fail_creates
+            self.ready_to_create = MockProvider.singleton.ready_to_create
+            self.ready_to_create.set()
+            self.cache_stopped = MockProvider.singleton.cache_stopped
+            self.unique_ips = MockProvider.singleton.unique_ips
+            self.terminate_nodes_fn = MockProvider.singleton.terminate_nodes_fn
+            # Many of these functions are called by node_launcher or updater in
+            # different threads. This can be treated as a global lock for
+            # everything.
+            self.lock = threading.Lock()
+            super().__init__(None, None)
+
 
     def non_terminated_nodes(self, tag_filters):
         with self.lock:
@@ -216,6 +238,12 @@ class MockProvider(NodeProvider):
             for node in self.mock_nodes.values():
                 if node.state == "pending":
                     node.state = "running"
+
+    @staticmethod
+    def fillout_available_node_types_resources(
+            self, cluster_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Fills out missing "resources" field for available_node_types."""
+        return cluster_config
 
 
 SMALL_CLUSTER = {

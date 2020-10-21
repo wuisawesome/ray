@@ -128,7 +128,7 @@ class MockProcessRunner:
 
 
 class MockProvider(NodeProvider):
-    def __init__(self, cache_stopped=False, unique_ips=False):
+    def __init__(self, cache_stopped=False, unique_ips=False, terminate_nodes_fn=None):
         self.mock_nodes = {}
         self.next_id = 0
         self.throw = False
@@ -137,6 +137,7 @@ class MockProvider(NodeProvider):
         self.ready_to_create.set()
         self.cache_stopped = cache_stopped
         self.unique_ips = unique_ips
+        self.terminate_nodes_fn = terminate_nodes_fn
         # Many of these functions are called by node_launcher or updater in
         # different threads. This can be treated as a global lock for
         # everything.
@@ -207,6 +208,8 @@ class MockProvider(NodeProvider):
                 self.mock_nodes[node_id].state = "stopped"
             else:
                 self.mock_nodes[node_id].state = "terminated"
+        if self.terminate_nodes_fn:
+            self.terminate_nodes_fn(node_id, tags)
 
     def finish_starting_nodes(self):
         with self.lock:

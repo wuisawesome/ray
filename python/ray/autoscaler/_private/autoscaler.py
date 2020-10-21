@@ -258,6 +258,13 @@ class StandardAutoscaler:
             nodes = self.workers()
             self.log_info_string(nodes, target_workers)
 
+        self.update_if_necessary()
+
+        # Attempt to recover unhealthy nodes
+        for node_id in nodes:
+            self.recover_if_needed(node_id, now)
+
+    def _update_if_necessary(self):
         # Update nodes with out-of-date files.
         # TODO(edoakes): Spawning these threads directly seems to cause
         # problems. They should at a minimum be spawned as daemon threads.
@@ -273,14 +280,12 @@ class StandardAutoscaler:
                         target=self.spawn_updater,
                         args=(node_id, commands, ray_start, resources,
                               docker_config)))
+
         for t in T:
             t.start()
         for t in T:
             t.join()
 
-        # Attempt to recover unhealthy nodes
-        for node_id in nodes:
-            self.recover_if_needed(node_id, now)
 
     def _keep_min_worker_of_node_type(self, node_id: NodeID,
                                       node_type_counts: Dict[NodeType, int]):

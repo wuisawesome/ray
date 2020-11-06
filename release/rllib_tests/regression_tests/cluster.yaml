@@ -1,4 +1,4 @@
-cluster_name: ray-rllib-regression-tests
+cluster_name: ray-rllib-regression-tests-alex
 
 min_workers: 0
 max_workers: 0
@@ -6,8 +6,8 @@ max_workers: 0
 # Cloud-provider specific configuration.
 provider:
     type: aws
-    region: us-west-2
-    availability_zone: us-west-2a
+    region: us-east-1
+    availability_zone: us-east-1c
     cache_stopped_nodes: False
 
 # How Ray will authenticate with newly launched nodes.
@@ -16,7 +16,7 @@ auth:
 
 head_node:
     InstanceType: p3.16xlarge
-    ImageId: ami-07728e9e2742b0662 # Deep Learning AMI (Ubuntu 16.04)
+    ImageId: ami-063585f0e06d22308 # Deep Learning AMI (Ubuntu 16.04)
 
     # Set primary volume to 25 GiB
     BlockDeviceMappings:
@@ -30,10 +30,16 @@ setup_commands: []
 
 # Command to start ray on the head node. You don't need to change this.
 head_start_ray_commands:
-    - source activate tensorflow_p36 && ray stop
-    - ulimit -n 65536; source activate tensorflow_p36 && OMP_NUM_THREADS=1 ray start --head --port=6379 --object-manager-port=8076 --autoscaling-config=~/ray_bootstrap_config.yaml
+    - source activate tensorflow_p36
+    # - source activate tensorflow_p36 && ray stop
+    # - ulimit -n 65536; source activate tensorflow_p36 && OMP_NUM_THREADS=1 ray start --head --port=6379 --object-manager-port=8076 --autoscaling-config=~/ray_bootstrap_config.yaml
 
 # Command to start ray on worker nodes. You don't need to change this.
 worker_start_ray_commands:
-    - source activate tensorflow_p36 && ray stop
-    - ulimit -n 65536; source activate tensorflow_p36 && OMP_NUM_THREADS=1 ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
+    - source activate tensorflow_p36
+    # - source activate tensorflow_p36 && ray stop
+    # - ulimit -n 65536; source activate tensorflow_p36 && OMP_NUM_THREADS=1 ray start --address=$RAY_HEAD_IP:6379 --object-manager-port=8076
+
+file_mounts:
+    "$HOME/run.sh": "run.sh"
+    "$HOME/compact-regression-test.yaml": "compact-regression-test.yaml"

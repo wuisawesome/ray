@@ -46,6 +46,8 @@ wheel="https://s3-us-west-2.amazonaws.com/ray-wheels/$ray_branch/$commit/ray-$ra
 
 conda uninstall -y terminado
 source activate tensorflow_p36 && pip install -U pip
+# Rllib specific dependencies aren't packaged with the wheel.
+source activate tensorflow_p36 && pip install ray[rllib]
 source activate tensorflow_p36 && pip install -U "$wheel"
 
 # Run all test cases, but with a forced num_gpus=1.

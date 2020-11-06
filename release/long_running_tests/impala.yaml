@@ -1,4 +1,4 @@
-cluster_name: long-running-apex-alex
+cluster_name: long-running-impala-alex
 min_workers: 0
 max_workers: 0
 target_utilization_fraction: 0.8

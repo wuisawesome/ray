@@ -3,7 +3,7 @@
 ####################################################################
 
 # An unique identifier for the head node and workers of this cluster.
-cluster_name: ray-stress-tests
+cluster_name: ray-stress-tests-alex
 
 # The minimum number of workers nodes to launch in addition to the head
 # node. This number should be >= 0.
@@ -26,8 +26,8 @@ idle_timeout_minutes: 5
 # Cloud-provider specific configuration.
 provider:
     type: aws
-    region: us-west-2
-    availability_zone: us-west-2a
+    region: us-west-1
+    availability_zone: us-west-1a
     cache_stopped_nodes: False
 
 # How Ray will authenticate with newly launched nodes.
@@ -44,7 +44,7 @@ auth:
 # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.create_instances
 head_node:
     InstanceType: m4.16xlarge
-    ImageId: ami-06d51e91cea0dac8d # Ubuntu 18.04
+    ImageId: ami-03fac5402e10ea93b # Ubuntu 18.04
 
     # Set primary volume to 25 GiB
     BlockDeviceMappings:
@@ -60,7 +60,7 @@ head_node:
 # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.create_instances
 worker_nodes:
     InstanceType: m4.large
-    ImageId: ami-06d51e91cea0dac8d # Ubuntu 18.04
+    ImageId: ami-03fac5402e10ea93b # Ubuntu 18.04
 
     # Set primary volume to 25 GiB
     BlockDeviceMappings:
@@ -79,13 +79,12 @@ worker_nodes:
 
 # Files or directories to copy to the head and worker nodes. The format is a
 # dictionary from REMOTE_PATH: LOCAL_PATH, e.g.
-file_mounts: {
-#    "/path1/on/remote/machine": "/path1/on/local/machine",
-#    "/path2/on/remote/machine": "/path2/on/local/machine",
-}
+file_mounts: 
+    "~/run.sh": "run.sh"
+    "~/workloads": "workloads"
 
 # List of shell commands to run to set up nodes.
-setup_commands: []
+setup_commands:
     # Uncomment these if you want to build ray from source.
     # - sudo apt-get -qq update
     # - sudo apt-get install -y build-essential curl unzip
@@ -101,7 +100,7 @@ setup_commands: []
     - pip install terminado
     - pip install boto3==1.4.8 cython==0.29.0
     # - cd ray/python; git checkout master; git pull; pip install -e . --verbose
-    - "pip install https://s3-us-west-2.amazonaws.com/ray-wheels/{{ray_branch}}/{{commit}}/ray-{{ray_version}}-cp36-cp36m-manylinux1_x86_64.whl"
+    - "pip install https://s3-us-west-2.amazonaws.com/ray-wheels/releases/1.0.1/4d272dd35b4cc083a2f49c6b0e6bc05452a68b3d/ray-1.0.1-cp36-cp36m-manylinux1_x86_64.whl"
 
 # Custom commands that will be run on the head node after common setup.
 head_setup_commands: []

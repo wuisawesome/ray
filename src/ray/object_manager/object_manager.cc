@@ -66,10 +66,12 @@ ObjectManager::ObjectManager(asio::io_service &main_service, const NodeID &self_
                              config_.rpc_service_threads_number),
       object_manager_service_(rpc_service_, *this),
       client_call_manager_(main_service, config_.rpc_service_threads_number),
-      restore_spilled_object_(restore_spilled_object) {
+      restore_spilled_object_(restore_spilled_object)
+{
   RAY_CHECK(config_.rpc_service_threads_number > 0);
   main_service_ = &main_service;
 
+  pull_requests_.reset(new std::unordered_map<ObjectID, PullRequest>());
   push_manager_.reset(new PushManager(/* max_chunks_in_flight= */ std::max(
       static_cast<int64_t>(1L),
       static_cast<int64_t>(config_.max_bytes_in_flight / config_.object_chunk_size))));
@@ -182,12 +184,12 @@ ray::Status ObjectManager::Pull(const ObjectID &object_id,
     RAY_LOG(ERROR) << object_id << " attempted to pull an object that's already local.";
     return ray::Status::OK();
   }
-  if (pull_requests_.find(object_id) != pull_requests_.end()) {
+  if (pull_requests_->find(object_id) != pull_requests_->end()) {
     RAY_LOG(DEBUG) << object_id << " has inflight pull_requests, skipping.";
     return ray::Status::OK();
   }
 
-  pull_requests_.emplace(object_id, PullRequest());
+  pull_requests_->emplace(object_id, PullRequest());
   // Subscribe to object notifications. A notification will be received every
   // time the set of client IDs for the object changes. Notifications will also
   // be received if the list of locations is empty. The set of client IDs has
@@ -197,8 +199,8 @@ ray::Status ObjectManager::Pull(const ObjectID &object_id,
       [this](const ObjectID &object_id, const std::unordered_set<NodeID> &client_ids,
              const std::string &spilled_url) {
         // Exit if the Pull request has already been fulfilled or canceled.
-        auto it = pull_requests_.find(object_id);
-        if (it == pull_requests_.end()) {
+        auto it = pull_requests_->find(object_id);
+        if (it == pull_requests_->end()) {
           return;
         }
         // Reset the list of clients that are now expected to have the object.
@@ -234,8 +236,8 @@ ray::Status ObjectManager::Pull(const ObjectID &object_id,
 }
 
 void ObjectManager::TryPull(const ObjectID &object_id) {
-  auto it = pull_requests_.find(object_id);
-  if (it == pull_requests_.end()) {
+  auto it = pull_requests_->find(object_id);
+  if (it == pull_requests_->end()) {
     return;
   }
 
@@ -528,14 +530,14 @@ void ObjectManager::SendObjectChunk(const UniqueID &push_id, const ObjectID &obj
 }
 
 void ObjectManager::CancelPull(const ObjectID &object_id) {
-  auto it = pull_requests_.find(object_id);
-  if (it == pull_requests_.end()) {
+  auto it = pull_requests_->find(object_id);
+  if (it == pull_requests_->end()) {
     return;
   }
 
   RAY_CHECK_OK(object_directory_->UnsubscribeObjectLocations(
       object_directory_pull_callback_id_, object_id));
-  pull_requests_.erase(it);
+  pull_requests_->erase(it);
 }
 
 ray::Status ObjectManager::Wait(
@@ -897,7 +899,7 @@ std::string ObjectManager::DebugString() const {
   result << "\n- num local objects: " << local_objects_.size();
   result << "\n- num active wait requests: " << active_wait_requests_.size();
   result << "\n- num unfulfilled push requests: " << unfulfilled_push_requests_.size();
-  result << "\n- num pull requests: " << pull_requests_.size();
+  result << "\n- num pull requests: " << pull_requests_->size();
   result << "\n- num buffered profile events: " << profile_events_.size();
   result << "\n" << push_manager_->DebugString();
   result << "\n" << object_directory_->DebugString();
@@ -910,7 +912,7 @@ void ObjectManager::RecordMetrics() const {
   stats::ObjectStoreAvailableMemory().Record(config_.object_store_memory - used_memory_);
   stats::ObjectStoreUsedMemory().Record(used_memory_);
   stats::ObjectStoreLocalObjects().Record(local_objects_.size());
-  stats::ObjectManagerPullRequests().Record(pull_requests_.size());
+  stats::ObjectManagerPullRequests().Record(pull_requests_->size());
 }
 
 }  // namespace ray

@@ -448,7 +448,7 @@ class ObjectManager : public ObjectManagerInterface,
 
   /// The objects that this object manager is currently trying to fetch from
   /// remote object managers.
-  std::unordered_map<ObjectID, PullRequest> pull_requests_;
+  std::shared_ptr<std::unordered_map<ObjectID, PullRequest>> pull_requests_;
 
   /// Profiling events that are to be batched together and added to the profile
   /// table in the GCS.

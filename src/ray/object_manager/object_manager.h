@@ -38,11 +38,20 @@
 #include "ray/object_manager/object_directory.h"
 #include "ray/object_manager/ownership_based_object_directory.h"
 #include "ray/object_manager/plasma/store_runner.h"
+#include "ray/object_manager/pull_manager.h"
 #include "ray/object_manager/push_manager.h"
 #include "ray/rpc/object_manager/object_manager_client.h"
 #include "ray/rpc/object_manager/object_manager_server.h"
 
 namespace ray {
+
+/// Defined in pull_manager.h
+struct PullRequest {
+  PullRequest() : retry_timer(nullptr), timer_set(false), client_locations() {}
+  std::unique_ptr<boost::asio::deadline_timer> retry_timer;
+  bool timer_set;
+  std::vector<NodeID> client_locations;
+};
 
 struct ObjectManagerConfig {
   /// The port that the object manager should use to listen for connections
@@ -294,13 +303,6 @@ class ObjectManager : public ObjectManagerInterface,
  private:
   friend class TestObjectManager;
 
-  struct PullRequest {
-    PullRequest() : retry_timer(nullptr), timer_set(false), client_locations() {}
-    std::unique_ptr<boost::asio::deadline_timer> retry_timer;
-    bool timer_set;
-    std::vector<NodeID> client_locations;
-  };
-
   struct WaitState {
     WaitState(boost::asio::io_service &service, int64_t timeout_ms,
               const WaitCallback &callback)
@@ -478,6 +480,9 @@ class ObjectManager : public ObjectManagerInterface,
 
   /// Object push manager.
   std::unique_ptr<PushManager> push_manager_;
+
+  /// Object pull manager.
+  std::unique_ptr<PullManager> pull_manager_;
 
   /// Running sum of the amount of memory used in the object store.
   int64_t used_memory_ = 0;

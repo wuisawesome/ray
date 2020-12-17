@@ -16,7 +16,7 @@ from ray.experimental.internal_kv import _internal_kv_put, \
 from ray.autoscaler.tags import (
     TAG_RAY_LAUNCH_CONFIG, TAG_RAY_RUNTIME_CONFIG,
     TAG_RAY_FILE_MOUNTS_CONTENTS, TAG_RAY_NODE_STATUS, TAG_RAY_NODE_KIND,
-    TAG_RAY_USER_NODE_TYPE, STATUS_UP_TO_DATE, NODE_KIND_WORKER,
+    TAG_RAY_USER_NODE_TYPE, STATUS_UNINITIALIZED, STATUS_WAITING_FOR_SSH, STATUS_SYNCING_FILES, STATUS_SETTING_UP, STATUS_UPDATE_FAILED, STATUS_UP_TO_DATE, NODE_KIND_WORKER,
     NODE_KIND_UNMANAGED, NODE_KIND_HEAD)
 from ray.autoscaler._private.providers import _get_node_provider
 from ray.autoscaler._private.updater import NodeUpdaterThread
@@ -533,12 +533,13 @@ class StandardAutoscaler:
         if not self.can_update(node_id):
             return
         key = self.provider.internal_ip(node_id)
-        if key not in self.load_metrics.last_heartbeat_time_by_ip:
-            self.load_metrics.last_heartbeat_time_by_ip[key] = now
-        last_heartbeat_time = self.load_metrics.last_heartbeat_time_by_ip[key]
-        delta = now - last_heartbeat_time
-        if delta < AUTOSCALER_HEARTBEAT_TIMEOUT_S:
-            return
+
+        if key in self.load_metrics.last_heartbeat_time_by_ip:
+            last_heartbeat_time = self.load_metrics.last_heartbeat_time_by_ip[key]
+            delta = now - last_heartbeat_time
+            if delta < AUTOSCALER_HEARTBEAT_TIMEOUT_S:
+                return
+
         logger.warning("StandardAutoscaler: "
                        "{}: No heartbeat in {}s, "
                        "restarting Ray to recover...".format(node_id, delta))

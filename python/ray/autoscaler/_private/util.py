@@ -296,50 +296,51 @@ def format_pg(pg):
 def format_info_string(lm_summary, autoscaler_summary, time=None):
     if time is None:
         time = datetime.now()
-    header = "=" * 8 + f"Autoscaler status: {time}" + "=" * 8
+    header = "=" * 8 + f" Autoscaler status: {time} " + "=" * 8
+    separator = "-" * len(header)
     available_node_report_lines = []
     for node_type, count in autoscaler_summary.active_nodes.items():
-        line = f"  {count} {node_type}"
+        line = f" {count} {node_type}"
         available_node_report_lines.append(line)
     available_node_report = "\n".join(available_node_report_lines)
 
     pending_lines = []
     for node_type, count in autoscaler_summary.pending_launches.items():
-        line = f"  {node_type}, {count} launching"
+        line = f" {node_type}, {count} launching"
         pending_lines.append(line)
     for ip, node_type in autoscaler_summary.pending_nodes:
-        line = f"  {ip}: {node_type}, setting up"
+        line = f" {ip}: {node_type}, setting up"
         pending_lines.append(line)
     pending_report = "\n".join(pending_lines)
 
     failure_lines = []
     for ip, node_type in autoscaler_summary.failed_nodes:
-        line = f"  {ip}: {node_type}"
+        line = f" {ip}: {node_type}"
     failure_report = "\n".join(failure_lines)
 
     usage_lines = []
     for resource, (used, total) in lm_summary.usage.items():
-        line = f"  {used}/{total} {resource}"
+        line = f" {used}/{total} {resource}"
         usage_lines.append(line)
     usage_report = "\n".join(usage_lines)
 
     demand_lines = []
     for bundle, count in lm_summary.resource_demand:
-        line = f"  {bundle}: {count} pending tasks/actors"
+        line = f" {bundle}: {count} pending tasks/actors"
         demand_lines.append(line)
     for entry in lm_summary.pg_demand:
         pg, count = entry
         pg_str = format_pg(pg)
-        line = f"  {pg_str}: {count} pending placement groups"
+        line = f" {pg_str}: {count} pending placement groups"
         demand_lines.append(line)
     for bundle, count in lm_summary.request_demand:
-        line = f"  {bundle}: {count} from request_resources()"
+        line = f" {bundle}: {count} from request_resources()"
         demand_lines.append(line)
     demand_report = "\n".join(demand_lines)
 
     formatted_output = f"""{header}
 Node Status
---------------------------------------------------
+{separator}
 Healthy:
 {available_node_report}
 Pending:
@@ -347,7 +348,7 @@ Pending:
 Recent failures:
 {failure_report}
 Resources
---------------------------------------------------
+{separator}
 Usage:
 {usage_report}
 Demands:
@@ -358,40 +359,41 @@ Demands:
 def format_info_string_no_node_types(lm_summary, time=None):
     if time is None:
         time = datetime.now()
-    header = "=" * 8 + f"Autoscaler status: {time}" + "=" * 8
+    header = "=" * 8 + f" Autoscaler status: {time} " + "=" * 8
+    separator = "-" * len(header)
 
     node_lines = []
     for node_type, count in lm_summary.node_types:
-        line = f"  {count} node(s) with resources: {node_type}"
+        line = f" {count} node(s) with resources: {node_type}"
         node_lines.append(line)
     node_report = "\n".join(node_lines)
 
     usage_lines = []
     for resource, (used, total) in lm_summary.usage.items():
-        line = f"  {used}/{total} {resource}"
+        line = f" {used}/{total} {resource}"
         usage_lines.append(line)
     usage_report = "\n".join(usage_lines)
 
     demand_lines = []
     for bundle, count in lm_summary.resource_demand:
-        line = f"  {bundle}: {count} pending tasks/actors"
+        line = f" {bundle}: {count} pending tasks/actors"
         demand_lines.append(line)
     for entry in lm_summary.pg_demand:
         pg, count = entry
         pg_str = format_pg(pg)
-        line = f"  {pg_str}: {count} pending placement groups"
+        line = f" {pg_str}: {count} pending placement groups"
         demand_lines.append(line)
     for bundle, count in lm_summary.request_demand:
-        line = f"  {bundle}: {count} from request_resources()"
+        line = f" {bundle}: {count} from request_resources()"
         demand_lines.append(line)
     demand_report = "\n".join(demand_lines)
 
     formatted_output = f"""{header}
 Node Status
---------------------------------------------------
+{separator}
 {node_report}
 Resources
---------------------------------------------------
+{separator}
 Usage:
 {usage_report}
 Demands:

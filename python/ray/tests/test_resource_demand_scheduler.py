@@ -2137,35 +2137,31 @@ def test_info_string():
         failed_nodes=[("1.2.3.6", "p3.2xlarge")])
 
     expected = """
-========Autoscaler status: 2020-12-28 01:02:03========
+======== Autoscaler status: 2020-12-28 01:02:03 ========
 Node Status
---------------------------------------------------
+--------------------------------------------------------
 Healthy:
-  2 p3.2xlarge
-  20 m4.4xlarge
-
+ 2 p3.2xlarge
+ 20 m4.4xlarge
 Pending:
-  m4.4xlarge, 2 launching
-  1.2.3.4: m4.4xlarge, setting up
-  1.2.3.5: m4.4xlarge, setting up
-
+ m4.4xlarge, 2 launching
+ 1.2.3.4: m4.4xlarge, setting up
+ 1.2.3.5: m4.4xlarge, setting up
 Recent failures:
 
-
 Resources
---------------------------------------------------
+--------------------------------------------------------
 Usage:
-  530/544 CPU
-  2/2 GPU
-  0/2 AcceleratorType:V100
-  0/1583.19 memory
-  0/471.02 object_store_memory
-
+ 530/544 CPU
+ 2/2 GPU
+ 0/2 AcceleratorType:V100
+ 0/1583.19 memory
+ 0/471.02 object_store_memory
 Demands:
-  {'CPU': 1}: 150 pending tasks/actors
-  {'CPU': 4} * 5 (PACK): 420 pending placement groups
-  {'CPU': 16}: 100 from request_resources()
-    """.strip()
+ {'CPU': 1}: 150 pending tasks/actors
+ {'CPU': 4} * 5 (PACK): 420 pending placement groups
+ {'CPU': 16}: 100 from request_resources()
+""".strip()
 
     actual = format_info_string(
         lm_summary,
@@ -2202,25 +2198,23 @@ def test_info_string_no_node_type():
         }, 1)])
 
     expected = """
-========Autoscaler status: 2020-12-28 01:02:03========
+======== Autoscaler status: 2020-12-28 01:02:03 ========
 Node Status
---------------------------------------------------
-  1 node(s) with resources: {'CPU': 16}
-
+--------------------------------------------------------
+ 1 node(s) with resources: {'CPU': 16}
 Resources
---------------------------------------------------
+--------------------------------------------------------
 Usage:
-  530/544 CPU
-  2/2 GPU
-  0/2 AcceleratorType:V100
-  0/1583.19 memory
-  0/471.02 object_store_memory
-
+ 530/544 CPU
+ 2/2 GPU
+ 0/2 AcceleratorType:V100
+ 0/1583.19 memory
+ 0/471.02 object_store_memory
 Demands:
-  {'CPU': 1}: 150 pending tasks/actors
-  {'CPU': 4} * 5 (PACK): 420 pending placement groups
-  {'CPU': 16}: 100 from request_resources()
-    """.strip()
+ {'CPU': 1}: 150 pending tasks/actors
+ {'CPU': 4} * 5 (PACK): 420 pending placement groups
+ {'CPU': 16}: 100 from request_resources()
+""".strip()
 
     actual = format_info_string_no_node_types(
         lm_summary,

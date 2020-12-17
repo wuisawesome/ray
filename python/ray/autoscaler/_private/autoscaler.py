@@ -120,9 +120,6 @@ class StandardAutoscaler:
         for local_path in self.config["file_mounts"].values():
             assert os.path.exists(local_path)
 
-        # List of resource bundles the user is requesting of the cluster.
-        # self.load_metrics.get_resource_requests() = []
-
         logger.info("StandardAutoscaler: {}".format(self.config))
 
     def update(self):
@@ -712,7 +709,8 @@ class StandardAutoscaler:
             logger.info(
                 "StandardAutoscaler: resource_requests={}".format(resources))
         assert isinstance(resources, list), resources
-        # self.load_metrics.get_resource_requests() = resources
+        self.load_metrics.set_resource_requests(resources)
+        # self.load_metrics.resource_requests = resources
 
     def kill_workers(self):
         logger.error("StandardAutoscaler: kill_workers triggered")

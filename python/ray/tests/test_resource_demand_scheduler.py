@@ -1712,6 +1712,7 @@ class AutoscalingTest(unittest.TestCase):
             process_runner=runner,
             update_interval_s=0)
         autoscaler.load_metrics.set_resource_requests([{"CPU": 0.2, "WORKER": 1.0}])
+        autoscaler.request_resources([{"CPU": 0.2, "WORKER": 1.0}])
         autoscaler.update()
         # 1 min worker for both min_worker and request_resources()
         self.waitForNodes(1)
@@ -1731,15 +1732,18 @@ class AutoscalingTest(unittest.TestCase):
                 "WORKER": 1.0
             }])
         autoscaler.load_metrics.set_resource_requests([{"CPU": 0.2, "WORKER": 1.0}] * 2)
+        autoscaler.request_resources([{"CPU": 0.2, "WORKER": 1.0}] * 2)
         autoscaler.update()
         # 2 requested_resource, 1 min worker, 1 free node -> 2 nodes total
         self.waitForNodes(2)
         autoscaler.load_metrics.set_resource_requests([{"CPU": 0.2, "WORKER": 1.0}])
+        autoscaler.request_resources([{"CPU": 0.2, "WORKER": 1.0}])
         autoscaler.update()
         # Still 2 because the second one is not connected and hence
         # request_resources occupies the connected node.
         self.waitForNodes(2)
         autoscaler.load_metrics.set_resource_requests([{"CPU": 0.2, "WORKER": 1.0}] * 3)
+        autoscaler.request_resources([{"CPU": 0.2, "WORKER": 1.0}] * 3)
         lm.update(
             node_ip,
             config["available_node_types"]["def_worker"]["resources"], {}, {},
@@ -1750,6 +1754,7 @@ class AutoscalingTest(unittest.TestCase):
         autoscaler.update()
         self.waitForNodes(3)
         autoscaler.load_metrics.set_resource_requests([])
+        autoscaler.request_resources([])
 
         lm.update("172.0.0.1",
                   config["available_node_types"]["def_worker"]["resources"],

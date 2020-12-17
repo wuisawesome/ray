@@ -120,9 +120,6 @@ class StandardAutoscaler:
         for local_path in self.config["file_mounts"].values():
             assert os.path.exists(local_path)
 
-        # List of resource bundles the user is requesting of the cluster.
-        self.resource_demand_vector = []
-
         logger.info("StandardAutoscaler: {}".format(self.config))
 
     def update(self):
@@ -176,7 +173,7 @@ class StandardAutoscaler:
         sorted_node_ids = self._sort_based_on_last_used(nodes, last_used)
         # Don't terminate nodes needed by request_resources()
         nodes_allowed_to_terminate: Dict[NodeID, bool] = {}
-        if self.resource_demand_vector:
+        if self.load_metrics.get_resource_requests():
             nodes_allowed_to_terminate = self._get_nodes_allowed_to_terminate(
                 sorted_node_ids)
 
@@ -226,7 +223,7 @@ class StandardAutoscaler:
             self.load_metrics.get_resource_utilization(),
             self.load_metrics.get_pending_placement_groups(),
             self.load_metrics.get_static_node_resources_by_ip(),
-            ensure_min_cluster_size=self.resource_demand_vector)
+            ensure_min_cluster_size=self.load_metrics.get_resource_requests())
         for node_type, count in to_launch.items():
             self.launch_new_node(count, node_type=node_type)
 
@@ -362,7 +359,7 @@ class StandardAutoscaler:
         used_resource_requests: List[ResourceDict]
         _, used_resource_requests = \
             get_bin_pack_residual(max_node_resources,
-                                  self.resource_demand_vector)
+                                  self.load_metrics.get_resource_requests())
         # Remove the first entry (the head node).
         max_node_resources.pop(0)
         # Remove the first entry (the head node).
@@ -701,18 +698,6 @@ class StandardAutoscaler:
                 len(self.num_failed_updates))
 
         return "{} nodes{}".format(len(nodes), suffix)
-
-    def request_resources(self, resources: List[dict]):
-        """Called by monitor to request resources.
-
-        Args:
-            resources: A list of resource bundles.
-        """
-        if resources:
-            logger.info(
-                "StandardAutoscaler: resource_requests={}".format(resources))
-        assert isinstance(resources, list), resources
-        self.resource_demand_vector = resources
 
     def kill_workers(self):
         logger.error("StandardAutoscaler: kill_workers triggered")

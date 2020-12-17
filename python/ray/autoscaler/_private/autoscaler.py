@@ -1,4 +1,4 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, Counter
 from typing import Any, Optional, Dict, List
 from urllib3.exceptions import MaxRetryError
 import copy
@@ -26,7 +26,7 @@ from ray.autoscaler._private.resource_demand_scheduler import \
     ResourceDict
 from ray.autoscaler._private.util import ConcurrentCounter, validate_config, \
     with_head_node_ip, hash_launch_conf, hash_runtime_conf, add_prefix, \
-    DEBUG_AUTOSCALING_STATUS, DEBUG_AUTOSCALING_ERROR
+    DEBUG_AUTOSCALING_STATUS, DEBUG_AUTOSCALING_ERROR, format_info_string
 from ray.autoscaler._private.constants import \
     AUTOSCALER_MAX_NUM_FAILURES, AUTOSCALER_MAX_LAUNCH_BATCH, \
     AUTOSCALER_MAX_CONCURRENT_LAUNCHES, AUTOSCALER_UPDATE_INTERVAL_S, \
@@ -41,20 +41,22 @@ UpdateInstructions = namedtuple(
     "UpdateInstructions",
     ["node_id", "init_commands", "start_ray_commands", "docker_config"])
 
+AutoscalerSummary = namedtuple(
+    "AutoscalerSummary",
+    ["active_nodes", "pending_nodes", "pending_launches", "failed_nodes"])
 
 class StandardAutoscaler:
     """The autoscaling control loop for a Ray cluster.
 
     There are two ways to start an autoscaling cluster: manually by running
-    `ray start --head --autoscaling-config=/path/to/config.yaml` on a
-    instance that has permission to launch other instances, or you can also use
-    `ray up /path/to/config.yaml` from your laptop, which will
-    configure the right AWS/Cloud roles automatically.
-
-    StandardAutoscaler's `update` method is periodically called by `monitor.py`
-    to add and remove nodes as necessary. Currently, load-based autoscaling is
-    not implemented, so all this class does is try to maintain a constant
-    cluster size.
+    `ray start --head --autoscaling-config=/path/to/config.yaml` on a instance
+    that has permission to launch other instances, or you can also use `ray up
+    /path/to/config.yaml` from your laptop, which will configure the right
+    AWS/Cloud roles automatically. See the documentation for a full definition
+    of autoscaling behavior:
+    https://docs.ray.io/en/master/cluster/autoscaling.html
+    StandardAutoscaler's `update` method is periodically called in
+    `monitor.py`'s monitoring loop.
 
     StandardAutoscaler is also used to bootstrap clusters (by adding workers
     until the cluster size that can handle the resource demand is met).
@@ -159,7 +161,7 @@ class StandardAutoscaler:
             self.provider.internal_ip(node_id)
             for node_id in self.all_workers()
         ])
-        # self.log_info_string(nodes)
+        logger.debug(self.info_string())
 
         # Terminate any idle or out of date nodes
         last_used = self.load_metrics.last_used_time_by_ip
@@ -199,7 +201,7 @@ class StandardAutoscaler:
         if nodes_to_terminate:
             self.provider.terminate_nodes(nodes_to_terminate)
             nodes = self.workers()
-            # self.log_info_string(nodes)
+            logger.debug(self.info_string())
 
         # Terminate nodes if there are too many
         nodes_to_terminate = []
@@ -214,7 +216,7 @@ class StandardAutoscaler:
             self.provider.terminate_nodes(nodes_to_terminate)
             nodes = self.workers()
 
-            # self.log_info_string(nodes)
+            logger.debug(self.info_string())
 
         to_launch = self.resource_demand_scheduler.get_nodes_to_launch(
             self.provider.non_terminated_nodes(tag_filters={}),
@@ -253,7 +255,7 @@ class StandardAutoscaler:
                 self.provider.terminate_nodes(nodes_to_terminate)
 
             nodes = self.workers()
-            # self.log_info_string(nodes)
+            logger.debug(self.info_string())
 
         # Update nodes with out-of-date files.
         # TODO(edoakes): Spawning these threads directly seems to cause
@@ -278,6 +280,8 @@ class StandardAutoscaler:
         # Attempt to recover unhealthy nodes
         for node_id in nodes:
             self.recover_if_needed(node_id, now)
+
+        logger.info(self.info_string())
 
     def _sort_based_on_last_used(self, nodes: List[NodeID],
                                  last_used: Dict[str, float]) -> List[NodeID]:
@@ -681,3 +685,60 @@ class StandardAutoscaler:
             self.provider.terminate_nodes(nodes)
         logger.error("StandardAutoscaler: terminated {} node(s)".format(
             len(nodes)))
+
+    def summary(self):
+        """Summarizes the active, pending, and failed node launches.
+        An active node is a node whose raylet is actively reporting heartbeats.
+        A pending node is non-active node whose node tag is uninitialized,
+        waiting for ssh, syncing files, or setting up.
+        If a node is not pending or active, it is failed.
+        Returns:
+            (AutoscalerSummary) The summary.
+        """
+        all_node_ids = self.provider.non_terminated_nodes(tag_filters={})
+
+        active_nodes = Counter()
+        pending_nodes = []
+        failed_nodes = []
+
+        for node_id in all_node_ids:
+            ip = self.provider.internal_ip(node_id)
+            node_tags = self.provider.node_tags(node_id)
+            if node_tags[TAG_RAY_NODE_KIND] == NODE_KIND_UNMANAGED:
+                continue
+            node_type = node_tags[TAG_RAY_USER_NODE_TYPE]
+
+            # TODO (Alex): If a node's raylet has died, it shouldn't be marked
+            # as active.
+            is_active = self.load_metrics.is_active(ip)
+            if is_active:
+                active_nodes[node_type] += 1
+            else:
+                status = node_tags[TAG_RAY_NODE_STATUS]
+                pending_states = [
+                    STATUS_UNINITIALIZED, STATUS_WAITING_FOR_SSH,
+                    STATUS_SYNCING_FILES, STATUS_SETTING_UP
+                ]
+                is_pending = status in pending_states
+                if is_pending:
+                    pending_nodes.append((ip, node_type))
+                else:
+                    failed_nodes.append((ip, node_type))
+
+        # The concurrent counter leaves some 0 counts in, so we need to
+        # manually filter those out.
+        pending_launches = {}
+        for node_type, count in self.pending_launches.breakdown().items():
+            if count:
+                pending_launches[node_type] = count
+
+        return AutoscalerSummary(
+            active_nodes=active_nodes,
+            pending_nodes=pending_nodes,
+            pending_launches=pending_launches,
+            failed_nodes=failed_nodes)
+
+    def info_string(self):
+        lm_summary = self.load_metrics.summary()
+        autoscaler_summary = self.summary()
+        return "\n" + format_info_string(lm_summary, autoscaler_summary)

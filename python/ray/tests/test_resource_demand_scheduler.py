@@ -9,7 +9,8 @@ import copy
 
 import ray
 from ray.autoscaler._private.util import \
-    rewrite_legacy_yaml_to_available_node_types, format_info_string, format_info_string_no_node_types
+    rewrite_legacy_yaml_to_available_node_types, format_info_string, \
+    format_info_string_no_node_types
 from ray.tests.test_autoscaler import SMALL_CLUSTER, MockProvider, \
     MockProcessRunner
 from ray.autoscaler._private.providers import (_NODE_PROVIDERS,
@@ -1966,7 +1967,8 @@ class AutoscalingTest(unittest.TestCase):
         lm.update(node_ip,
                   config["available_node_types"]["def_worker"]["resources"],
                   {}, {})
-        print("============ Should scale down from here =============", node_id)
+        print("============ Should scale down from here =============",
+              node_id)
         autoscaler.update()
         print(self.provider.non_terminated_node_ips({}))
         self.waitForNodes(1)

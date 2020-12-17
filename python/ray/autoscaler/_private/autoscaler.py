@@ -16,8 +16,9 @@ from ray.experimental.internal_kv import _internal_kv_put, \
 from ray.autoscaler.tags import (
     TAG_RAY_LAUNCH_CONFIG, TAG_RAY_RUNTIME_CONFIG,
     TAG_RAY_FILE_MOUNTS_CONTENTS, TAG_RAY_NODE_STATUS, TAG_RAY_NODE_KIND,
-    TAG_RAY_USER_NODE_TYPE, STATUS_UNINITIALIZED, STATUS_WAITING_FOR_SSH, STATUS_SYNCING_FILES, STATUS_SETTING_UP, STATUS_UPDATE_FAILED, STATUS_UP_TO_DATE, NODE_KIND_WORKER,
-    NODE_KIND_UNMANAGED, NODE_KIND_HEAD)
+    TAG_RAY_USER_NODE_TYPE, STATUS_UNINITIALIZED, STATUS_WAITING_FOR_SSH,
+    STATUS_SYNCING_FILES, STATUS_SETTING_UP, STATUS_UP_TO_DATE,
+    NODE_KIND_WORKER, NODE_KIND_UNMANAGED, NODE_KIND_HEAD)
 from ray.autoscaler._private.providers import _get_node_provider
 from ray.autoscaler._private.updater import NodeUpdaterThread
 from ray.autoscaler._private.node_launcher import NodeLauncher
@@ -25,8 +26,8 @@ from ray.autoscaler._private.resource_demand_scheduler import \
     get_bin_pack_residual, ResourceDemandScheduler, NodeType, NodeID, NodeIP, \
     ResourceDict
 from ray.autoscaler._private.util import ConcurrentCounter, validate_config, \
-    with_head_node_ip, hash_launch_conf, hash_runtime_conf, add_prefix, \
-    DEBUG_AUTOSCALING_STATUS, DEBUG_AUTOSCALING_ERROR, format_info_string
+    with_head_node_ip, hash_launch_conf, hash_runtime_conf, \
+    DEBUG_AUTOSCALING_ERROR, format_info_string
 from ray.autoscaler._private.constants import \
     AUTOSCALER_MAX_NUM_FAILURES, AUTOSCALER_MAX_LAUNCH_BATCH, \
     AUTOSCALER_MAX_CONCURRENT_LAUNCHES, AUTOSCALER_UPDATE_INTERVAL_S, \
@@ -44,6 +45,7 @@ UpdateInstructions = namedtuple(
 AutoscalerSummary = namedtuple(
     "AutoscalerSummary",
     ["active_nodes", "pending_nodes", "pending_launches", "failed_nodes"])
+
 
 class StandardAutoscaler:
     """The autoscaling control loop for a Ray cluster.
@@ -535,7 +537,8 @@ class StandardAutoscaler:
         key = self.provider.internal_ip(node_id)
 
         if key in self.load_metrics.last_heartbeat_time_by_ip:
-            last_heartbeat_time = self.load_metrics.last_heartbeat_time_by_ip[key]
+            last_heartbeat_time = self.load_metrics.last_heartbeat_time_by_ip[
+                key]
             delta = now - last_heartbeat_time
             if delta < AUTOSCALER_HEARTBEAT_TIMEOUT_S:
                 return

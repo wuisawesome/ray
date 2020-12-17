@@ -159,7 +159,7 @@ class StandardAutoscaler:
             self.provider.internal_ip(node_id)
             for node_id in self.all_workers()
         ])
-        self.log_info_string(nodes)
+        # self.log_info_string(nodes)
 
         # Terminate any idle or out of date nodes
         last_used = self.load_metrics.last_used_time_by_ip
@@ -199,7 +199,7 @@ class StandardAutoscaler:
         if nodes_to_terminate:
             self.provider.terminate_nodes(nodes_to_terminate)
             nodes = self.workers()
-            self.log_info_string(nodes)
+            # self.log_info_string(nodes)
 
         # Terminate nodes if there are too many
         nodes_to_terminate = []
@@ -214,7 +214,7 @@ class StandardAutoscaler:
             self.provider.terminate_nodes(nodes_to_terminate)
             nodes = self.workers()
 
-            self.log_info_string(nodes)
+            # self.log_info_string(nodes)
 
         to_launch = self.resource_demand_scheduler.get_nodes_to_launch(
             self.provider.non_terminated_nodes(tag_filters={}),
@@ -253,7 +253,7 @@ class StandardAutoscaler:
                 self.provider.terminate_nodes(nodes_to_terminate)
 
             nodes = self.workers()
-            self.log_info_string(nodes)
+            # self.log_info_string(nodes)
 
         # Update nodes with out-of-date files.
         # TODO(edoakes): Spawning these threads directly seems to cause
@@ -673,31 +673,6 @@ class StandardAutoscaler:
     def unmanaged_workers(self):
         return self.provider.non_terminated_nodes(
             tag_filters={TAG_RAY_NODE_KIND: NODE_KIND_UNMANAGED})
-
-    def log_info_string(self, nodes):
-        tmp = "Cluster status: "
-        tmp += self.info_string(nodes)
-        tmp += "\n"
-        tmp += self.load_metrics.info_string()
-        tmp += "\n"
-        tmp += self.resource_demand_scheduler.debug_string(
-            nodes, self.pending_launches.breakdown(),
-            self.load_metrics.get_resource_utilization())
-        if _internal_kv_initialized():
-            _internal_kv_put(DEBUG_AUTOSCALING_STATUS, tmp, overwrite=True)
-        if self.prefix_cluster_info:
-            tmp = add_prefix(tmp, self.config["cluster_name"])
-        logger.debug(tmp)
-
-    def info_string(self, nodes):
-        suffix = ""
-        if self.updaters:
-            suffix += " ({} updating)".format(len(self.updaters))
-        if self.num_failed_updates:
-            suffix += " ({} failed to update)".format(
-                len(self.num_failed_updates))
-
-        return "{} nodes{}".format(len(nodes), suffix)
 
     def kill_workers(self):
         logger.error("StandardAutoscaler: kill_workers triggered")

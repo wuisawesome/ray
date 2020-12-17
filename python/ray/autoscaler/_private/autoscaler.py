@@ -699,19 +699,6 @@ class StandardAutoscaler:
 
         return "{} nodes{}".format(len(nodes), suffix)
 
-    def request_resources(self, resources: List[dict]):
-        """Called by monitor to request resources.
-
-        Args:
-            resources: A list of resource bundles.
-        """
-        if resources:
-            logger.info(
-                "StandardAutoscaler: resource_requests={}".format(resources))
-        assert isinstance(resources, list), resources
-        self.load_metrics.set_resource_requests(resources)
-        # self.load_metrics.resource_requests = resources
-
     def kill_workers(self):
         logger.error("StandardAutoscaler: kill_workers triggered")
         nodes = self.workers()

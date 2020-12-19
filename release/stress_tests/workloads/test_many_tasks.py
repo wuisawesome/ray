@@ -30,6 +30,7 @@ while True:
 logger.info("Nodes have all joined. There are %s resources.",
             ray.cluster_resources())
 
+
 # Require 1 GPU to force the tasks to be on remote machines.
 @ray.remote(num_gpus=1)
 def f(size, *xs):
@@ -55,8 +56,11 @@ def stage0():
         stage_0_iterations.append(time.time() - iteration_start)
 
     return time.time() - start_time
+
+
 stage_0_time = stage0()
 logger.info("Finished stage 0 after %s seconds.", stage_0_time)
+
 
 # Stage 1: Launch a bunch of tasks.
 def stage1():
@@ -70,8 +74,11 @@ def stage1():
         stage_1_iterations.append(time.time() - iteration_start)
 
     return time.time() - start_time, stage_1_iterations
+
+
 stage_1_time, stage_1_iterations = stage1()
 logger.info("Finished stage 1 after %s seconds.", stage_1_time)
+
 
 # Launch a bunch of tasks, each with a bunch of dependencies. TODO(rkn): This
 # test starts to fail if we increase the number of tasks in the inner loop from
@@ -92,8 +99,10 @@ def stage2():
         logger.info("Finished after %s seconds.", time.time() - start_time)
     return time.time() - start_time, stage_2_iterations
 
+
 stage_2_time, stage_2_iterations = stage2()
 logger.info("Finished stage 2 after %s seconds.", stage_2_time)
+
 
 # Create a bunch of actors.
 def stage3():
@@ -104,7 +113,7 @@ def stage3():
     logger.info("Finished stage 3 actor creation in %s seconds.",
                 stage_3_creation_time)
 
-# Submit a bunch of small tasks to each actor. (approximately 1070 seconds)
+    # Submit a bunch of small tasks to each actor. (approximately 1070 seconds)
     start_time = time.time()
     logger.info("Submitting many small actor tasks.")
     for N in [1000, 100000]:
@@ -115,8 +124,11 @@ def stage3():
                 logger.info("Submitted {}".format(i * len(actors)))
         ray.get(x_ids)
     return time.time() - start_time, stage_3_creation_time
+
+
 stage_3_time, stage_3_creation_time = stage3()
 logger.info("Finished stage 3 in %s seconds.", stage_3_time)
+
 
 # This tests https://github.com/ray-project/ray/issues/10150. The only way to
 # integration test this is via performance. The goal is to fill up the cluster
@@ -130,7 +142,6 @@ def stage4():
     num_tasks = int(ray.cluster_resources()["GPU"])
     logger.info(f"Scheduling many tasks for spillback.")
 
-
     @ray.remote(num_gpus=1)
     def func(t):
         if t % 100 == 0:
@@ -139,7 +150,6 @@ def stage4():
         time.sleep(1)
         end = time.perf_counter()
         return start, end, ray.worker.global_worker.node.unique_id
-
 
     results = ray.get([func.remote(i) for i in range(num_tasks)])
 
@@ -154,6 +164,7 @@ def stage4():
         spread = last - first
         spreads.append(spread)
         logger.info(f"Spread: {last - first}\tLast: {last}\tFirst: {first}")
+
 
 # avg_spread ~ 115 with Ray 1.0 scheduler. ~695 with (buggy) 0.8.7 scheduler.
     avg_spread = sum(spreads) / len(spreads)

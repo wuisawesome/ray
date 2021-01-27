@@ -471,7 +471,7 @@ pluggy==0.13.1
     # via pytest
 portalocker==2.0.0
     # via gluoncv
-prettytable==0.7.2
+prettytable==2.0.0
     # via cliff
 prometheus-client==0.9.0
     # via

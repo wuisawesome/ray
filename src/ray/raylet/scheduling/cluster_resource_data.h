@@ -111,6 +111,20 @@ class TaskResourceInstances {
       return {};
     }
   };
+  const std::vector<FixedPoint> &GetCPUInstances() const {
+    if (!this->predefined_resources.empty()) {
+      return this->predefined_resources[CPU];
+    } else {
+      return {};
+    }
+  };
+  void SetCPUInstances(std::vector<FixedPoint> &cpu_instances) const {
+    predefined_resources.resize(PredefinedResources_MAX);
+    predefined_resources[CPU] = cpu_instances;
+  }
+  void ClearCPUInstances() {
+    predefined_resources[CPU].clear();
+  }
   /// Get GPU instances only.
   std::vector<FixedPoint> GetGPUInstances() const {
     if (!this->predefined_resources.empty()) {

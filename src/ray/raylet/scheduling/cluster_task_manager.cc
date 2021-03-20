@@ -885,6 +885,8 @@ bool ClusterTaskManager::ReturnCpuResourcesToBlockedWorker(
       // negative, at most one task can "borrow" this worker's resources.
       cluster_resource_scheduler_->SubtractCPUResourceInstances(
           cpu_instances, /*allow_going_negative=*/true);
+      worker->SetBorrowedCPUInstances(cpu_instances);
+
       return true;
     }
   }

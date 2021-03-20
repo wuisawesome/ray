@@ -184,6 +184,20 @@ class Worker : public WorkerInterface {
 
   void ClearAllocatedInstances() { allocated_instances_ = nullptr; };
 
+  void SetBorrowedCPUInstances(
+                               std::vector<FixedPoint> &cpu_instances
+                               ) {
+    borrowed_cpus_ = cpu_instances;
+  }
+
+  const std::vector<FixedPoint> &GetBorrowedCPUInstances() const {
+    return borrowed_cpus_;
+  }
+
+  void ClearBorrowedCPUInstances() {
+    borrowed_cpus_.clear();
+  }
+
   void SetLifetimeAllocatedInstances(
       std::shared_ptr<TaskResourceInstances> &allocated_instances) {
     lifetime_allocated_instances_ = allocated_instances;
@@ -264,6 +278,8 @@ class Worker : public WorkerInterface {
   /// The capacity of each resource instance allocated to this worker
   /// when running as an actor.
   std::shared_ptr<TaskResourceInstances> lifetime_allocated_instances_;
+  /// The CPU instances that we have temporarily released when a worker is blocked.
+  std::vector<FixedPoint> borrowed_cpus_;
   /// Task being assigned to this worker.
   Task assigned_task_;
 };

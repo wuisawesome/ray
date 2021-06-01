@@ -688,7 +688,7 @@ py_test(
 # TD3Trainer
 py_test(
     name = "test_td3",
-    tags = ["agents_dir"],
+    tags = ["agents_dir", "flaky"],
     size = "medium",
     srcs = ["agents/ddpg/tests/test_td3.py"]
 )

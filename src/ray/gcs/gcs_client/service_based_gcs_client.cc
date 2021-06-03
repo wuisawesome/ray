@@ -55,12 +55,15 @@ Status ServiceBasedGcsClient::Connect(instrumented_io_context &io_service) {
 
   if (!get_server_address_func_) {
     get_server_address_func_ = [this](std::pair<std::string, int> *address) {
-      // TODO (Alex): In order to remove Redis, we need a service discovery mechanism that doesn't require Redis.
+      // TODO (Alex): In order to remove Redis, we need a service discovery mechanism that
+      // doesn't require Redis.
       return GetGcsServerAddressFromRedis(
-                                          redis_client_->GetPrimaryContext()->sync_context(), address);
+          redis_client_->GetPrimaryContext()->sync_context(), address);
     };
-    RAY_CHECK(!options_.rpc_server_ip_.empty() && options_.rpc_server_port_ > 0) << "Gcs address not provided.";
-    current_gcs_server_address_ = std::make_pair<std::string, int>(options_.rpc_server_ip_, options_.rpc_server_port_);
+    RAY_CHECK(!options_.rpc_server_ip_.empty() && options_.rpc_server_port_ > 0)
+        << "Gcs address not provided.";
+    current_gcs_server_address_ = std::make_pair<std::string, int>(
+        options_.rpc_server_ip_, options_.rpc_server_port_);
   }
 
   resubscribe_func_ = [this](bool is_pubsub_server_restarted) {

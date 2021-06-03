@@ -53,26 +53,14 @@ Status ServiceBasedGcsClient::Connect(instrumented_io_context &io_service) {
   // Init gcs pub sub instance.
   gcs_pub_sub_.reset(new GcsPubSub(redis_client_));
 
-  // Get gcs service address.
-  if (get_server_address_func_) {
-    get_server_address_func_(&current_gcs_server_address_);
-    int i = 0;
-    while (current_gcs_server_address_.first.empty() &&
-           i < RayConfig::instance().gcs_service_connect_retries()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-          RayConfig::instance().internal_gcs_service_connect_wait_milliseconds()));
-      get_server_address_func_(&current_gcs_server_address_);
-      i++;
-    }
-  } else {
+  if (!get_server_address_func_) {
     get_server_address_func_ = [this](std::pair<std::string, int> *address) {
+      // TODO (Alex): In order to remove Redis, we need a service discovery mechanism that doesn't require Redis.
       return GetGcsServerAddressFromRedis(
-          redis_client_->GetPrimaryContext()->sync_context(), address);
+                                          redis_client_->GetPrimaryContext()->sync_context(), address);
     };
-    RAY_CHECK(GetGcsServerAddressFromRedis(
-        redis_client_->GetPrimaryContext()->sync_context(), &current_gcs_server_address_,
-        RayConfig::instance().gcs_service_connect_retries()))
-        << "Failed to get gcs server address when init gcs client.";
+    RAY_CHECK(!options_.rpc_server_ip_.empty() && options_.rpc_server_port_ > 0) << "Gcs address not provided.";
+    current_gcs_server_address_ = std::make_pair<std::string, int>(options_.rpc_server_ip_, options_.rpc_server_port_);
   }
 
   resubscribe_func_ = [this](bool is_pubsub_server_restarted) {

@@ -50,9 +50,13 @@ class GcsClientOptions {
 
   GcsClientOptions() {}
 
-  // GCS server address
+  // Gcs Redis info
   std::string server_ip_;
   int server_port_;
+
+  // GCS rpc server info address;
+  std::string rpc_server_ip_;
+  int rpc_server_port_;
 
   // Password of GCS server.
   std::string password_;
